@@ -1,9 +1,1 @@
-function createRoot() {
-  return {
-    render: () => {}
-  }
-}
-
-export {
-  createRoot
-}
+export { createRoot } from './src/client/ReactDOMRoot';
