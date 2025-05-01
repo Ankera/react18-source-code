@@ -1,4 +1,4 @@
-import { HostRoot } from "./ReactWorkTags";
+import { HostComponent, HostRoot, HostText, IndeterminateComponent } from './ReactWorkTags';
 import { NoFlags } from './ReactFiberFlags';
 
 /**
@@ -49,4 +49,75 @@ export function createFiber(tag, pendingProps, key) {
 
 export function createHostRootFiber() {
   return createFiber(HostRoot, null, null);
+}
+
+/**
+ * 基于老的fiber和新的属性，创建新的fiber
+ * current 和 workInProgress 不是同一个对象
+ * workInprogress
+ *  1、有两种情况，一种是没有，创建一个新的，互相通过 alternate 指向
+ *  2、存在 alternate，直接复用老的 alternate 对象
+ * 所谓的复用
+ *    1、复用老的 fiber 对象
+ *    2、复用老的 DOM
+ * @param {*} current
+ * @param {*} pendingProps 新属性
+ *
+ * 例子：return <button>确定</button>
+ * 第一次挂载
+ *  创建新的 button
+ * 第一次更新
+ *  第一次挂载时创建的 fiber 就是老 fiber
+ *  老 fiber 没有 alternate，没有则会创建新的 button fiber
+ * 第二次更新
+ *  就会复用老的 fiber 的 alternate
+ */
+export function createWorkInProgress(current, pendingProps) {
+  let workInProgress = current.alternate;
+  if (workInProgress === null) {
+    workInProgress = createFiber(current.tag, pendingProps, current.key);
+    workInProgress.type = current.type;
+    workInProgress.stateNode = current.stateNode;
+    workInProgress.alternate = current;
+    current.alternate = workInProgress;
+  } else {
+    // 复用老的 fiber 对象
+    workInProgress.pendingProps = pendingProps;
+    workInProgress.type = current.type;
+    workInProgress.flags = NoFlags;
+    workInProgress.subtreeFlags = NoFlags;
+  }
+
+  workInProgress.child = current.child;
+  workInProgress.sibling = current.sibling;
+  workInProgress.memoizedProps = current.memoizedProps;
+  workInProgress.memoizedState = current.memoizedState;
+  workInProgress.updateQueue = current.updateQueue;
+  workInProgress.index = current.index;
+
+  return workInProgress;
+}
+
+export function createFiberFromElement(element) {
+  const { type, key, props } = element;
+  return createFiberFromTypeAndProps(type, key, props);
+}
+
+function createFiberFromTypeAndProps(type, key, pendingProps) {
+  let tag = IndeterminateComponent;
+
+  // div, span, h1
+  if (typeof type === "string") {
+    tag = HostComponent;
+  }
+
+  const fiber = createFiber(tag, pendingProps, key);
+  fiber.type = type;
+  return fiber;
+}
+
+export function createFiberFromText(content) {
+  const fiber = createFiber(HostText, content, null);
+
+  return fiber;
 }

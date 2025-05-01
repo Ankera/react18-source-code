@@ -34,7 +34,7 @@ function ReactElement(type, key, ref, props) {
 }
 
 export function jsxDEV(type, config, maybeKey) {
-  debugger;
+  // debugger;
   // 属性名
   let propName;
   const props = {};

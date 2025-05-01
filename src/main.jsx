@@ -1,17 +1,15 @@
 import { createRoot } from "react-dom/client";
 import "./main.css";
 
-// debugger;
 const element = (
-  <div>
+  <h1>
     hello <span style={{ color: "red" }}>world</span>
-  </div>
+  </h1>
 );
 
-console.log(element)
+console.log('====', element)
 const root = createRoot(document.getElementById("root"));
-console.log(root);
-// root.render(<App />);
+root.render(element);
 
 
 /**
