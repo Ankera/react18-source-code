@@ -2,6 +2,14 @@ import { scheduleCallback } from "scheduler";
 import { beginWork } from "./ReactFiberBeginWork";
 import { createWorkInProgress } from "./ReactFiber";
 import { completeWork } from "./ReactFiberCompleteWork";
+import { ChildDeletion, MutationMask, NoFlags, Passive, Placement, Update } from './ReactFiberFlags';
+import { FunctionComponent, HostComponent, HostRoot, HostText } from './ReactWorkTags';
+import {
+  commitMuationEffectsOnFiber, // 执行 DOM操作
+  // commitPassiveUnmountEffects, // 执行 destroy
+  // commitPassiveMountEffects,// 执行 create
+  // commitLayoutEffects,
+} from './ReactFiberCommitWork';
 
 let workInProgress = null;
 
@@ -26,7 +34,14 @@ function ensureRootInScheduled(root) {
 }
 
 function performConcurrentWorkOnRoot(root) {
+  // 第一次渲染以同步的方式渲染根节点，初次渲染的时候，都是同步
   renderRootSync(root);
+
+  // 开始进入提交阶段，就是执行副作用
+  const finishedWork = root.current.alternate;
+  root.finishedWork = finishedWork;
+
+  commitRoot(root);
 }
 
 function prepareFreshStack(root) {
@@ -80,4 +95,25 @@ function completeUnitOfWork(unitOfWork) {
     completedWork = returnFiber;
     workInProgress = completedWork;
   } while (completedWork !== null);
+}
+
+/**
+ * 提交阶段
+ * @param {*} root
+ */
+function commitRoot(root) {
+  // 先获取新构建好的 fiber 树的根节点
+  const { finishedWork } = root;
+
+  console.log("~~~~~~~~~~~~~~~~~开始commit~~~~~~~~~~~~~~~~~~~~");
+  // 判断子树有没有副作用
+  const subtreeFlags = (finishedWork.subtreeFlags & MutationMask) != NoFlags;
+  const rootFlags = (finishedWork.flags & MutationMask) != NoFlags;
+  if (subtreeFlags || rootFlags) {
+    console.log("~~~~~~~~~~~~~~~~~DOM执行变更~~~~~~~~~~~~~~~~~~~~");
+    // 当 DOM 执行变更之后
+    commitMuationEffectsOnFiber(finishedWork, root);
+
+    console.log("~~~~~~~~~~~~~~~~~DOM执行变更后~~~~~~~~~~~~~~~~~~~~");
+  }
 }
